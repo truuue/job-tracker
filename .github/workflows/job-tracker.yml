@@ -2,7 +2,7 @@ name: Job Tracker
 
 on:
   schedule:
-    - cron: '0 6 * * *'  # Exécution tous les jours à 6h00 UTC
+    - cron: '0 6 * * *'  # Exécution tous les jours à 6h00 UTC (8h00 France)
   workflow_dispatch:  # Permet l'exécution manuelle
 
 jobs:
