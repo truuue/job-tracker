@@ -4,7 +4,7 @@ from notion_client import Client
 from dotenv import load_dotenv
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 import random
 from selenium import webdriver
@@ -198,6 +198,42 @@ def get_existing_links():
     return links
 
 
+def clean_old_offers():
+    print("Nettoyage des anciennes offres...")
+    week_ago = (datetime.now() - timedelta(days=7)).isoformat()
+
+    has_more = True
+    next_cursor = None
+    deleted_count = 0
+
+    while has_more:
+        response = notion.databases.query(
+            database_id=DATABASE_ID,
+            start_cursor=next_cursor,
+            filter={
+                "property": "Date ajoutée",
+                "date": {
+                    "before": week_ago
+                }
+            }
+        )
+
+        for page in response["results"]:
+            try:
+                notion.pages.update(
+                    page_id=page["id"],
+                    archived=True  # Ceci "supprime" la page dans Notion
+                )
+                deleted_count += 1
+            except Exception as e:
+                print(f"Erreur lors de la suppression d'une offre : {str(e)}")
+
+        has_more = response["has_more"]
+        next_cursor = response["next_cursor"] if response["has_more"] else None
+
+    print(f"{deleted_count} offres anciennes supprimées.")
+
+
 def main():
     all_offers = []
     for keyword in ["developpeur", "react", "node", "golang", "ux/ui"]:
@@ -215,6 +251,9 @@ def main():
             f"Ajouté : {offer['title']} @ {offer['company']} (Score: {offer['score']})")
 
     print(f"{len(new_offers)} nouvelles offres ajoutées.")
+
+    # Nettoyer les anciennes offres après l'ajout des nouvelles
+    clean_old_offers()
 
 
 if __name__ == "__main__":
